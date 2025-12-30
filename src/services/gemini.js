@@ -7,6 +7,13 @@ const GENERATION_CONFIG = {
     maxOutputTokens: 8192,
 };
 
+const MODELS_TO_TRY = [
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-pro",
+    "gemini-pro",
+];
+
 export const generateProjectGuide = async (projectName, projectIdea) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -14,11 +21,15 @@ export const generateProjectGuide = async (projectName, projectIdea) => {
         throw new Error("API Key is missing. Please configure VITE_GEMINI_API_KEY.");
     }
 
-    try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    let lastError = null;
 
-        const prompt = `
+    for (const modelName of MODELS_TO_TRY) {
+        try {
+            console.log(`Attempting to generate with model: ${modelName}`);
+            const model = genAI.getGenerativeModel({ model: modelName });
+
+            const prompt = `
       You are an expert senior software engineer and mentor.
       A user wants to build the following project:
       
@@ -53,18 +64,24 @@ export const generateProjectGuide = async (projectName, projectIdea) => {
       Format the response in clean Markdown. Use code blocks for all code.
       `;
 
-        const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: GENERATION_CONFIG,
-        });
+            const result = await model.generateContent({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: GENERATION_CONFIG,
+            });
 
-        const response = result.response;
-        return response.text();
+            const response = result.response;
+            return response.text();
 
-    } catch (error) {
-        console.error("Gemini API Error:", error);
-        throw error;
+        } catch (error) {
+            console.warn(`Model ${modelName} failed:`, error.message);
+            lastError = error;
+            // Continue to next model
+        }
     }
+
+    // If we get here, all models failed
+    console.error("All models failed. Last error:", lastError);
+    throw new Error(`Failed to generate guide with any available model. Last error: ${lastError?.message || "Unknown error"}`);
 };
 
 export const debugLogModels = async () => {
