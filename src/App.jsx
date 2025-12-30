@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import InputSection from './components/InputSection'
 import GuideDisplay from './components/GuideDisplay'
-import { generateProjectGuide } from './services/gemini'
+import { generateProjectGuide, debugLogModels } from './services/gemini'
 import './styles/index.css'
 
 function App() {
   const [guide, setGuide] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    debugLogModels();
+  }, []);
 
   const handleGenerate = async (projectName, projectIdea) => {
     setIsLoading(true)

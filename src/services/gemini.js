@@ -66,3 +66,18 @@ export const generateProjectGuide = async (projectName, projectIdea) => {
         throw error;
     }
 };
+
+export const debugLogModels = async () => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) return;
+
+    try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        // Note: listModels is not directly exposed on the client SDK easily in some versions,
+        // but verifying the key works for any request is helpful.
+        // We will try to fetch a simple model info if possible, or just log that we are trying.
+        console.log("Attempting to initialize Gemini with Key: ", apiKey.substring(0, 10) + "...");
+    } catch (e) {
+        console.error("Debug Error:", e);
+    }
+}
